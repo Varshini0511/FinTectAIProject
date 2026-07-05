@@ -1,0 +1,48 @@
+{
+  // Press F5 with one of these selected (top-left Run-and-Debug dropdown).
+  // Set breakpoints by clicking left of a line number (a red dot appears).
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // BEST FIRST DEBUG: runs one question through the whole agent and exits.
+      // Put a breakpoint in src/fintech_agent/agent.py on the `run` method.
+      "name": "Debug: CLI one-shot",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/chat.py",
+      "args": ["What's the balance on acc_1001?"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      // Interactive REPL in the debug terminal (type questions at You>).
+      "name": "Debug: CLI interactive",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/chat.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      // Debug the web UI. Breakpoints in app.py AND agent.py both hit.
+      // Open http://localhost:8501 and send a message to trigger them.
+      "name": "Debug: Streamlit UI",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "streamlit",
+      "args": ["run", "app.py", "--server.headless", "true"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      // Step through the evaluation suite (evaluators + LLM-as-judge).
+      "name": "Debug: Eval suite (local)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "evals.run_eval",
+      "args": ["--local"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+# Local-only extras for the OFFLINE evaluation suite (not needed to run the app).
+# Install with:  pip install -r requirements-dev.txt
+-r requirements.txt
+
+# Evaluation
+deepeval>=1.4.0
+
+# Guardrails AI runtime (the app implements its validators directly; this is only
+# needed if you want to run them through the real Guardrails Hub).
+guardrails-ai>=0.5.10
+
+# Larger spaCy model for more accurate local PII detection (optional).
+# python -m spacy download en_core_web_lg

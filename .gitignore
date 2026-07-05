@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.streamlit/secrets.toml
+*.egg-info/
+.deepeval/
+.deepeval_cache.json
+dist/
+build/
+.pytest_cache/
+streamlit.log
