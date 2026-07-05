@@ -16,7 +16,10 @@ from .config import settings
 
 
 def _connect() -> psycopg.Connection:
-    return psycopg.connect(settings.database_url, row_factory=dict_row)
+    # prepare_threshold=None disables server-side prepared statements, which is
+    # required to work through a transaction pooler like Supabase's pgbouncer
+    # (port 6543). Harmless on a direct/local connection.
+    return psycopg.connect(settings.database_url, row_factory=dict_row, prepare_threshold=None)
 
 
 def query_one(sql: str, params: tuple = ()) -> dict | None:
