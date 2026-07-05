@@ -27,9 +27,25 @@ st.set_page_config(page_title="NimbusPay Support", page_icon="🏦", layout="wid
 # config.py (which reads os.getenv) picks them up. Locally this is a no-op.
 try:
     for _k, _v in st.secrets.items():
-        os.environ.setdefault(_k, str(_v))
+        os.environ[_k] = str(_v)
 except Exception:
     pass
+
+# Fail fast with a CLEAR message if deployment secrets are missing, instead of
+# crashing later with a cryptic localhost database error. Locally, .env covers
+# these via config.py, so we only complain when neither source provided them.
+from dotenv import load_dotenv  # noqa: E402
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
+_missing = [k for k in ("LLM_API_KEY", "DATABASE_URL") if not os.getenv(k)]
+if _missing:
+    st.error(
+        f"Missing secrets: {', '.join(_missing)}.\n\n"
+        "On Streamlit Cloud: **Manage app → ⋮ → Settings → Secrets**, paste your "
+        "TOML secrets, Save, then **Reboot app**. (Secrets do NOT go in Supabase "
+        "or GitHub — only in the Streamlit Cloud secrets box.)"
+    )
+    st.stop()
 
 from fintech_agent import FintechAgent, chat_store  # noqa: E402
 from fintech_agent.config import settings  # noqa: E402
