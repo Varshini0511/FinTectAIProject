@@ -5,7 +5,7 @@ end-to-end**: not just an LLM chatbot, but the full lifecycle most demos skip �
 **tracing, cost tracking, an evaluation suite, and layered safety guardrails** —
 backed by a real Postgres database and deployed to the cloud.
 
-> 🔗 **Live demo:** `https://<your-app>.streamlit.app` *(password-gated — ask me)*
+> 🔗 **Live demo:** https://fintectaiproject-chatassistant.streamlit.app *(password-gated — ask me for access)*
 > 🖥 **Stack:** Python · Streamlit · Groq (OpenAI-compatible LLM API) · PostgreSQL (Supabase) · Presidio · DeepEval · LangSmith-ready
 
 <!-- Add a screenshot or GIF here: the chat UI with the 🔍 trace-tree panel open -->
