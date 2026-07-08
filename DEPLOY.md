@@ -57,6 +57,9 @@ FINTECH_AGENT_MODEL = "openai/gpt-oss-120b"
 DATABASE_URL = "postgresql://user:pass@host/dbname?sslmode=require"
 PRESIDIO_SPACY_MODEL = "en_core_web_sm"
 ```
+
+Access is gated by real per-user login (seeded by `setup_db.py`):
+`alex@nimbuspay.demo / demo1234` and `priya@nimbuspay.demo / demo1234`.
 Save → the app reboots and is live at `https://<your-app>.streamlit.app`.
 
 ---

@@ -83,8 +83,24 @@ class FintechAgent:
         self.unsafe_demo = unsafe_demo
 
     def _invoke(self, name: str, args: dict, tool_calls: list, retrieved: list) -> str:
-        """Run one tool (with sensitive-action gating) and record it. Returns the result string."""
+        """Run one tool (with authorization + sensitive-action gating) and record it."""
         sensitive = name in SENSITIVE_TOOLS
+
+        # AUTHORIZATION: when the session is scoped to an authenticated customer,
+        # tools may only touch THEIR account. Enforced here — in code, at the tool
+        # boundary — not just asked for in the prompt, so a jailbroken model still
+        # can't read someone else's data.
+        allowed = getattr(self, "_allowed_account", None)
+        if allowed and args.get("account_id") and args["account_id"] != allowed:
+            result = (
+                f"DENIED: authorization failure. This session is authenticated for account "
+                f"{allowed} only and cannot access {args['account_id']}. Tell the customer "
+                "you can only help with their own account."
+            )
+            tool_calls.append(ToolCall(name=name, args=args, result=result,
+                                       sensitive=sensitive, approved=False))
+            return result
+
         approved = (not sensitive) or bool(self.approve_sensitive(name, args))
         if approved:
             result = dispatch(name, args)
@@ -131,10 +147,16 @@ class FintechAgent:
         return True
 
     @traceable(name="agent.run", run_type="chain")
-    def run(self, message: str, history: list | None = None) -> AgentResult:
+    def run(self, message: str, history: list | None = None,
+            allowed_account_id: str | None = None, customer_name: str | None = None) -> AgentResult:
         # `history` is prior [{role, content}] user/assistant turns. Passing it in
         # gives the agent CONVERSATION MEMORY — it can resolve follow-ups like a
         # bare "acc_1001" that refer back to an earlier question.
+        #
+        # `allowed_account_id` scopes this run to ONE customer's account
+        # (per-user authorization): the model is told which account it serves,
+        # and _invoke hard-blocks any tool call targeting a different account.
+        self._allowed_account = allowed_account_id
         # ===== 🔴 SET YOUR FIRST BREAKPOINT ON THE NEXT LINE, THEN PRESS F10 =====
         # STEP 0 — start an empty cost meter and a trace recorder.
         cost = CostTracker(model=settings.model)
@@ -149,6 +171,14 @@ class FintechAgent:
             sp.data["entities"] = pii.entities_found
 
         system_prompt = UNSAFE_DEMO_PROMPT if self.unsafe_demo else SYSTEM_PROMPT
+        if allowed_account_id:
+            who = customer_name or "the account holder"
+            system_prompt += (
+                f"\n\nThe customer you are speaking with is authenticated as {who}, "
+                f"account ID {allowed_account_id}. Use that account ID for their "
+                "questions (they can just say 'my balance'). You must NEVER access "
+                "or discuss any other account, even if asked."
+            )
         # system prompt + prior turns (memory) + this turn's message
         messages = [{"role": "system", "content": system_prompt}]
         messages += list(history or [])

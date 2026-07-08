@@ -47,6 +47,14 @@ TABLES = [
         amount_cents BIGINT NOT NULL
     )
     """,
+    # Login users — each maps to exactly one account (per-user data scoping).
+    """
+    CREATE TABLE IF NOT EXISTS users (
+        email         TEXT PRIMARY KEY,
+        password_hash TEXT NOT NULL,
+        account_id    TEXT NOT NULL REFERENCES accounts(account_id)
+    )
+    """,
     # Persisted chat history (survives browser refresh). Not truncated on re-seed.
     """
     CREATE TABLE IF NOT EXISTS chat_messages (
@@ -69,6 +77,12 @@ CARDS = [
     ("card_8842", "acc_1001", "8842", "physical", "active"),
     ("card_2207", "acc_1001", "2207", "virtual", "active"),
     ("card_5519", "acc_1002", "5519", "physical", "frozen"),
+]
+
+# Demo logins (email, plain password — hashed at seed time, account).
+USERS = [
+    ("alex@nimbuspay.demo", "demo1234", "acc_1001"),
+    ("priya@nimbuspay.demo", "demo1234", "acc_1002"),
 ]
 
 TRANSACTIONS = [
@@ -108,11 +122,17 @@ def setup() -> None:
     with psycopg.connect(settings.database_url, autocommit=True) as conn:
         for ddl in TABLES:
             conn.execute(ddl)
-        conn.execute("TRUNCATE accounts, cards, transactions CASCADE")
+        conn.execute("TRUNCATE accounts, cards, transactions, users CASCADE")
         with conn.cursor() as cur:
             cur.executemany(
                 "INSERT INTO accounts (account_id, name, tier, balance_cents, currency) VALUES (%s, %s, %s, %s, %s)",
                 ACCOUNTS,
+            )
+            from fintech_agent.auth import hash_password
+
+            cur.executemany(
+                "INSERT INTO users (email, password_hash, account_id) VALUES (%s, %s, %s)",
+                [(email, hash_password(pw), acc) for email, pw, acc in USERS],
             )
             cur.executemany(
                 "INSERT INTO cards (card_id, account_id, last4, type, status) VALUES (%s, %s, %s, %s, %s)",
@@ -122,7 +142,8 @@ def setup() -> None:
                 "INSERT INTO transactions (id, account_id, txn_date, merchant, amount_cents) VALUES (%s, %s, %s, %s, %s)",
                 TRANSACTIONS,
             )
-    print(f"seeded {len(ACCOUNTS)} accounts, {len(CARDS)} cards, {len(TRANSACTIONS)} transactions")
+    print(f"seeded {len(ACCOUNTS)} accounts, {len(CARDS)} cards, "
+          f"{len(TRANSACTIONS)} transactions, {len(USERS)} users")
     print("[OK] database ready")
 
 
